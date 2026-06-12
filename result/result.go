@@ -6,6 +6,11 @@ import (
 
 // ===== Type =====
 
+/* Monadic container.
+ *
+ * Represents a value of type V or an error.
+ * Used for computations that may fail.
+ */
 type Result[V any] struct {
 	Value V
 	Error error
@@ -13,27 +18,54 @@ type Result[V any] struct {
 
 // ===== Constructors (Functions) =====
 
-// Create result containing value, type inferred
-// ex: `Ok(42)`, `Ok("foobar")`
+/* Monad pure (return) operation.
+ *
+ * Wraps a value in Result.
+ * Type is inferred from the argument.
+ *
+ * Examples:
+ *
+ *   Ok(42)    // Result[int]
+ *   Ok("foo") // Result[string]
+ */
 func Ok[V any](value V) Result[V] {
 	return Result[V]{Value: value}
 }
 
-// Create result containing error, type required, error passed as value
-// ex: `result.Err[int](fmt.Errorf("not found"))`
+/* Error constructor.
+ *
+ * Constructs an error Result.
+ * Requires explicit type parameter because
+ * the value type cannot be inferred from an error.
+ *
+ * Example:
+ *
+ *   Err[int](fmt.Errorf("not found"))
+ */
 func Err[V any](err error) Result[V] {
 	return Result[V]{Error: err}
 }
 
-// Create result containing error, type required, error passed as fmt string
-// ex: `result.Errf[int]("index %d not found", i)`
+/* Error constructor (formatted).
+ *
+ * Constructs an error Result from a format string.
+ * Requires explicit type parameter.
+ *
+ * Example:
+ *
+ *   Errf[int]("index %d not found", i)
+ */
 func Errf[V any](format string, args ...any) Result[V] {
 	return Result[V]{Error: fmt.Errorf(format, args...)}
 }
 
 // ===== Accessors (Methods) =====
 
-// retrieves value or panics with stored error
+/* Value accessor.
+ *
+ * Returns the contained value or panics
+ * with the stored error.
+ */
 func (r Result[V]) Unwrap() V {
 	if !r.IsOk() {
 		panic(r.Error)
@@ -41,45 +73,70 @@ func (r Result[V]) Unwrap() V {
 	return r.Value
 }
 
-// retrieves values or returns default in case of error
-func (r Result[V]) UnwrapOr(val V) V {
+/* Value accessor with fallback.
+ *
+ * Returns the contained value,
+ * or fallback if Result is Err.
+ */
+func (r Result[V]) UnwrapOr(fallback V) V {
 	if r.IsErr() {
-		return val
+		return fallback
 	}
 	return r.Value
 }
 
-// check state
+/* State observer.
+ *
+ * Reports whether Result contains a value (no error).
+ */
 func (r Result[V]) IsOk() bool {
 	return r.Error == nil
 }
 
-// check state
+/* State observer.
+ *
+ * Reports whether Result contains an error.
+ */
 func (r Result[V]) IsErr() bool {
 	return r.Error != nil
 }
 
 // ===== Transformers (Functions) =====
 
-// Applies function to content if possible, returns new result with propogated error
+/* Monad bind operation.
+ *
+ * Applies a function that returns Result
+ * to the contained value.
+ * Propagates the error if Err.
+ */
 func Bind[V any, U any](r Result[V], lambda func(V) Result[U]) Result[U] {
 	if r.IsOk() {
 		return lambda(r.Value)
 	}
-	return Result[U]{Error: r.Error}
+	return Err[U](r.Error)
 }
 
-// Transforms value with a plain function if Ok, propagates error otherwise
+/* Functor map operation.
+ *
+ * Applies a plain function to the contained value,
+ * wrapping the result in Ok.
+ * Propagates error if Err.
+ */
 func Map[V any, U any](r Result[V], lambda func(V) U) Result[U] {
 	if r.IsOk() {
-		return Ok[U](lambda(r.Value))
+		return Ok(lambda(r.Value))
 	}
-	return Result[U]{Error: r.Error}
+	return Err[U](r.Error)
 }
 
+/* Monad join operation.
+ *
+ * Collapses a nested Result[Result[V]] into Result[V].
+ * Propagates the outer error if present.
+ */
 func Flatten[V any](r Result[Result[V]]) Result[V] {
 	if r.IsOk() {
 		return r.Value
 	}
-	return Result[V]{Error: r.Error}
+	return Err[V](r.Error)
 }
