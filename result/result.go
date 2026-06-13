@@ -40,28 +40,73 @@ func Errf[V any](format string, args ...any) Result[V] {
 	return Result[V]{Error: fmt.Errorf(format, args...)}
 }
 
-// Unwrap returns the contained value or panics with the stored error.
-func (r Result[V]) Unwrap() V {
+// Pack constructs a Result from a Go (V, error) return pair.
+// The inverse of Unpack.
+//
+// Examples:
+//
+//	Pack(os.ReadFile("data.txt"))    // Result[[]byte]
+//	Pack(strconv.Atoi("42"))         // Result[int]
+func Pack[V any](value V, err error) Result[V] {
+	if err != nil {
+		return Err[V](err)
+	}
+	return Ok(value)
+}
+
+// Get returns the contained value or panics with the stored error.
+func (r Result[V]) Get() V {
 	if !r.IsOk() {
 		panic(r.Error)
 	}
 	return r.Value
 }
 
-// UnwrapOr returns the contained value, or fallback if Err.
-func (r Result[V]) UnwrapOr(fallback V) V {
+// Getf returns the contained value or panics with a formatted message.
+//
+// Example:
+//
+//	r.Getf("failed to load config: %v", r.Error)
+func (r Result[V]) Getf(format string, args ...any) V {
+	if r.IsErr() {
+		panic(fmt.Sprintf(format, args...))
+	}
+	return r.Value
+}
+
+// Or returns the contained value, or fallback if Err.
+func (r Result[V]) Or(fallback V) V {
 	if r.IsErr() {
 		return fallback
 	}
 	return r.Value
 }
 
-// Expect returns the contained value or panics with a formatted message.
-func (r Result[V]) Expect(format string, args ...any) V {
+// OrElse returns the contained value, or computes a fallback from the error.
+//
+// Examples:
+//
+//	r.OrElse(func(err error) int { return 0 })
+//	r.OrElse(fallbackFromErr)
+func (r Result[V]) OrElse(fn func(error) V) V {
 	if r.IsErr() {
-		panic(fmt.Sprintf(format, args...))
+		return fn(r.Error)
 	}
 	return r.Value
+}
+
+// Catch applies a function to the error to produce an alternative Result.
+// Returns self if Ok.
+//
+// Examples:
+//
+//	r.Catch(func(err error) Result[int] { return Ok(0) })
+//	r.Catch(fallbackResult)
+func (r Result[V]) Catch(fn func(error) Result[V]) Result[V] {
+	if r.IsErr() {
+		return fn(r.Error)
+	}
+	return r
 }
 
 // IsOk reports whether the Result contains a value.
@@ -74,16 +119,30 @@ func (r Result[V]) IsErr() bool {
 	return r.Error != nil
 }
 
-// Bind applies a function that returns Result to the contained value.
+// MapErr applies a function to the contained error, leaving the value untouched.
+// Returns self if Ok.
+//
+// Examples:
+//
+//	r.MapErr(func(err error) error { return fmt.Errorf("parse: %w", err) })
+//	r.MapErr(wrapErr)
+func (r Result[V]) MapErr(fn func(error) error) Result[V] {
+	if r.IsErr() {
+		return Err[V](fn(r.Error))
+	}
+	return r
+}
+
+// FlatMap applies a function that returns Result to the contained value.
 // This method cannot change the inner type; for that, use the
-// package-level Bind function.
+// package-level FlatMap function.
 // Errors are propagated forward.
 //
 // Examples:
 //
-//	foo.Bind(func(x int) Result[int] { return Ok(x + 5) })
-//	foo.Bind(bar)
-func (r Result[V]) Bind(lambda func(V) Result[V]) Result[V] {
+//	foo.FlatMap(func(x int) Result[int] { return Ok(x + 5) })
+//	foo.FlatMap(bar)
+func (r Result[V]) FlatMap(lambda func(V) Result[V]) Result[V] {
 	if r.IsOk() {
 		return lambda(r.Value)
 	}
@@ -106,15 +165,25 @@ func (r Result[V]) Map(lambda func(V) V) Result[V] {
 	return Err[V](r.Error)
 }
 
-// Bind applies a function that returns Result to the contained value.
+// Unpack returns the Result as a Go (V, error) pair.
+// The inverse of Pack.
+//
+// Example:
+//
+//	value, err := r.Unpack()
+func (r Result[V]) Unpack() (V, error) {
+	return r.Value, r.Error
+}
+
+// FlatMap applies a function that returns Result to the contained value.
 // Unlike the method, this function can change the inner type from V to U.
 // Errors are propagated forward.
 //
 // Examples:
 //
-//	result.Bind(okInt, func(x int) Result[string] { return Ok("foo") })
-//	result.Bind(okInt, parse)
-func Bind[V any, U any](r Result[V], lambda func(V) Result[U]) Result[U] {
+//	result.FlatMap(okInt, func(x int) Result[string] { return Ok("foo") })
+//	result.FlatMap(okInt, parse)
+func FlatMap[V any, U any](r Result[V], lambda func(V) Result[U]) Result[U] {
 	if r.IsOk() {
 		return lambda(r.Value)
 	}
