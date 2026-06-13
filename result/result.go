@@ -4,68 +4,43 @@ import (
 	"fmt"
 )
 
-// ===== Type =====
-
-/* Monadic container.
- *
- * Represents a value of type V or an error.
- * Used for computations that may fail.
- */
+// Result holds either a value of type V or an error.
 type Result[V any] struct {
 	Value V
 	Error error
 }
 
-// ===== Constructors (Functions) =====
-
-/* Monad pure (return) operation.
- *
- * Wraps a value in Result.
- * Type is inferred from the argument.
- *
- * Examples:
- *
- *   Ok(42)    // Result[int]
- *   Ok("foo") // Result[string]
- */
+// Ok wraps a value in a Result.
+// Type is inferred from the argument.
+//
+// Example:
+//
+//	Ok(5) // Result[int]
 func Ok[V any](value V) Result[V] {
 	return Result[V]{Value: value}
 }
 
-/* Error constructor.
- *
- * Constructs an error Result.
- * Requires explicit type parameter because
- * the value type cannot be inferred from an error.
- *
- * Example:
- *
- *   Err[int](fmt.Errorf("not found"))
- */
+// Err wraps an error in a Result.
+// Type must be specified explicitly.
+//
+// Example:
+//
+//	Err[int](fmt.Errorf("not found"))
 func Err[V any](err error) Result[V] {
 	return Result[V]{Error: err}
 }
 
-/* Error constructor (formatted).
- *
- * Constructs an error Result from a format string.
- * Requires explicit type parameter.
- *
- * Example:
- *
- *   Errf[int]("index %d not found", i)
- */
+// Errf creates an error from a format string and wraps it in a Result.
+// Type must be specified explicitly.
+//
+// Example:
+//
+//	Errf[int]("not found: %d", i)
 func Errf[V any](format string, args ...any) Result[V] {
 	return Result[V]{Error: fmt.Errorf(format, args...)}
 }
 
-// ===== Accessors (Methods) =====
-
-/* Value accessor.
- *
- * Returns the contained value or panics
- * with the stored error.
- */
+// Unwrap returns the contained value or panics with the stored error.
 func (r Result[V]) Unwrap() V {
 	if !r.IsOk() {
 		panic(r.Error)
@@ -73,11 +48,7 @@ func (r Result[V]) Unwrap() V {
 	return r.Value
 }
 
-/* Value accessor with fallback.
- *
- * Returns the contained value,
- * or fallback if Result is Err.
- */
+// UnwrapOr returns the contained value, or fallback if Err.
 func (r Result[V]) UnwrapOr(fallback V) V {
 	if r.IsErr() {
 		return fallback
@@ -85,30 +56,64 @@ func (r Result[V]) UnwrapOr(fallback V) V {
 	return r.Value
 }
 
-/* State observer.
- *
- * Reports whether Result contains a value (no error).
- */
+// Expect returns the contained value or panics with a formatted message.
+func (r Result[V]) Expect(format string, args ...any) V {
+	if r.IsErr() {
+		panic(fmt.Sprintf(format, args...))
+	}
+	return r.Value
+}
+
+// IsOk reports whether the Result contains a value.
 func (r Result[V]) IsOk() bool {
 	return r.Error == nil
 }
 
-/* State observer.
- *
- * Reports whether Result contains an error.
- */
+// IsErr reports whether the Result contains an error.
 func (r Result[V]) IsErr() bool {
 	return r.Error != nil
 }
 
-// ===== Transformers (Functions) =====
+// Bind applies a function that returns Result to the contained value.
+// This method cannot change the inner type; for that, use the
+// package-level Bind function.
+// Errors are propagated forward.
+//
+// Examples:
+//
+//	foo.Bind(func(x int) Result[int] { return Ok(x + 5) })
+//	foo.Bind(bar)
+func (r Result[V]) Bind(lambda func(V) Result[V]) Result[V] {
+	if r.IsOk() {
+		return lambda(r.Value)
+	}
+	return Err[V](r.Error)
+}
 
-/* Monad bind operation.
- *
- * Applies a function that returns Result
- * to the contained value.
- * Propagates the error if Err.
- */
+// Map applies a function to the contained value, wrapping the result in Ok.
+// This method cannot change the inner type; for that, use the
+// package-level Map function.
+// Errors are propagated forward.
+//
+// Examples:
+//
+//	foo.Map(func(x int) int { return x + 5 })
+//	foo.Map(bar)
+func (r Result[V]) Map(lambda func(V) V) Result[V] {
+	if r.IsOk() {
+		return Ok(lambda(r.Value))
+	}
+	return Err[V](r.Error)
+}
+
+// Bind applies a function that returns Result to the contained value.
+// Unlike the method, this function can change the inner type from V to U.
+// Errors are propagated forward.
+//
+// Examples:
+//
+//	result.Bind(okInt, func(x int) Result[string] { return Ok("foo") })
+//	result.Bind(okInt, parse)
 func Bind[V any, U any](r Result[V], lambda func(V) Result[U]) Result[U] {
 	if r.IsOk() {
 		return lambda(r.Value)
@@ -116,12 +121,14 @@ func Bind[V any, U any](r Result[V], lambda func(V) Result[U]) Result[U] {
 	return Err[U](r.Error)
 }
 
-/* Functor map operation.
- *
- * Applies a plain function to the contained value,
- * wrapping the result in Ok.
- * Propagates error if Err.
- */
+// Map applies a function to the contained value, wrapping the result in Ok.
+// Unlike the method, this function can change the inner type from V to U.
+// Errors are propagated forward.
+//
+// Examples:
+//
+//	result.Map(okInt, func(x int) string { return "foo" })
+//	result.Map(okInt, strconv.Itoa)
 func Map[V any, U any](r Result[V], lambda func(V) U) Result[U] {
 	if r.IsOk() {
 		return Ok(lambda(r.Value))
@@ -129,11 +136,8 @@ func Map[V any, U any](r Result[V], lambda func(V) U) Result[U] {
 	return Err[U](r.Error)
 }
 
-/* Monad join operation.
- *
- * Collapses a nested Result[Result[V]] into Result[V].
- * Propagates the outer error if present.
- */
+// Flatten collapses a nested Result[Result[V]] into Result[V].
+// Propagates the outer error if present.
 func Flatten[V any](r Result[Result[V]]) Result[V] {
 	if r.IsOk() {
 		return r.Value
