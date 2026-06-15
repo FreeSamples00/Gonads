@@ -12,7 +12,7 @@ import (
 // None: propagated forward.
 func Map[I any, O any](o Option[I], fn func(I) O) Option[O] {
 	if o.IsSome() {
-		return Some(fn(o.Value))
+		return Some(fn(o.Get()))
 	}
 	return None[O]()
 }
@@ -22,7 +22,7 @@ func Map[I any, O any](o Option[I], fn func(I) O) Option[O] {
 // None: propagated forward.
 func MapFlat[I any, O any](o Option[I], fn func(I) Option[O]) Option[O] {
 	if o.IsSome() {
-		return fn(o.Value)
+		return fn(o.Get())
 	}
 	return None[O]()
 }
@@ -32,7 +32,7 @@ func MapFlat[I any, O any](o Option[I], fn func(I) Option[O]) Option[O] {
 // None: propagated forward.
 func Flatten[T any](o Option[Option[T]]) Option[T] {
 	if o.IsSome() {
-		return o.Value
+		return o.Get()
 	}
 	return None[T]()
 }

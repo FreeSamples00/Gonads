@@ -6,9 +6,9 @@ import (
 
 // Result holds either a value of type T or an error.
 type Result[T any] struct {
-	Value T     // Ok value
-	Error error // Err value
-	ok    bool  // sentinel values to protect raw creations
+	val T     // Ok value
+	err error // Err value
+	ok  bool  // sentinel values to protect raw creations
 }
 
 // ===== Constructors =====
@@ -18,19 +18,19 @@ type Result[T any] struct {
 // Ok wraps a value in a Result.
 // Type is inferred from the argument.
 func Ok[T any](value T) Result[T] {
-	return Result[T]{Value: value, ok: true}
+	return Result[T]{val: value, ok: true}
 }
 
 // Err wraps an error in a Result.
 // Type must be specified.
 func Err[T any](err error) Result[T] {
-	return Result[T]{Error: err, ok: false}
+	return Result[T]{err: err, ok: false}
 }
 
 // Errf creates an error from a format string and wraps it in a Result.
 // Type must be specified.
 func Errf[T any](format string, args ...any) Result[T] {
-	return Result[T]{Error: fmt.Errorf(format, args...), ok: false}
+	return Result[T]{err: fmt.Errorf(format, args...), ok: false}
 }
 
 // ----- From Go -----
@@ -65,9 +65,9 @@ func (r Result[T]) IsErr() bool {
 // Err: panics with stored error.
 func (r Result[T]) Get() T {
 	if !r.IsOk() {
-		panic(r.Error)
+		panic(r.err)
 	}
-	return r.Value
+	return r.val
 }
 
 // Getf returns the contained value.
@@ -77,7 +77,7 @@ func (r Result[T]) Getf(format string, args ...any) T {
 	if r.IsErr() {
 		panic(fmt.Sprintf(format, args...))
 	}
-	return r.Value
+	return r.val
 }
 
 // Or returns the contained value.
@@ -87,7 +87,7 @@ func (r Result[T]) Or(fallback T) T {
 	if r.IsErr() {
 		return fallback
 	}
-	return r.Value
+	return r.val
 }
 
 // OrElse returns the contained value.
@@ -95,15 +95,20 @@ func (r Result[T]) Or(fallback T) T {
 // Err: calls fn with error, returns its result.
 func (r Result[T]) OrElse(fn func(error) T) T {
 	if r.IsErr() {
-		return fn(r.Error)
+		return fn(r.err)
 	}
-	return r.Value
+	return r.val
+}
+
+// Err returns the contained error.
+func (r Result[T]) Err() error {
+	return r.err
 }
 
 // Unpack returns the Result as a Go (v, error) pair.
 // The inverse of PackResult.
 func (r Result[T]) Unpack() (T, error) {
-	return r.Value, r.Error
+	return r.val, r.err
 }
 
 // ----- Mutators -----
@@ -114,7 +119,7 @@ func (r Result[T]) Unpack() (T, error) {
 // Ok: no-op.
 func (r Result[T]) Catch(fn func(error) Result[T]) Result[T] {
 	if r.IsErr() {
-		return fn(r.Error)
+		return fn(r.err)
 	}
 	return r
 }
@@ -124,9 +129,9 @@ func (r Result[T]) Catch(fn func(error) Result[T]) Result[T] {
 // Err: propagated forward.
 func (r Result[T]) Map(fn func(T) T) Result[T] {
 	if r.IsOk() {
-		return Ok(fn(r.Value))
+		return Ok(fn(r.val))
 	}
-	return Err[T](r.Error)
+	return r
 }
 
 // MapErr applies fn to the contained error.
@@ -142,7 +147,7 @@ func (r Result[T]) MapErr(fn func(error) error) Result[T] {
 // Err: propagated forward.
 func (r Result[T]) MapFlat(fn func(T) Result[T]) Result[T] {
 	if r.IsOk() {
-		return fn(r.Value)
+		return fn(r.val)
 	}
-	return Err[T](r.Error)
+	return r
 }

@@ -12,9 +12,9 @@ import (
 // Err: propagated forward.
 func Map[I any, O any](r Result[I], fn func(I) O) Result[O] {
 	if r.IsOk() {
-		return Ok(fn(r.Value))
+		return Ok(fn(r.Get()))
 	}
-	return Err[O](r.Error)
+	return Err[O](r.Err())
 }
 
 // MapFlat applies fn to the contained value and returns the resulting Result.
@@ -22,9 +22,9 @@ func Map[I any, O any](r Result[I], fn func(I) O) Result[O] {
 // Err: propagated forward.
 func MapFlat[I any, O any](r Result[I], fn func(I) Result[O]) Result[O] {
 	if r.IsOk() {
-		return fn(r.Value)
+		return fn(r.Get())
 	}
-	return Err[O](r.Error)
+	return Err[O](r.Err())
 }
 
 // Flatten collapses a nested Result[Result[T]] into Result[T].
@@ -32,7 +32,7 @@ func MapFlat[I any, O any](r Result[I], fn func(I) Result[O]) Result[O] {
 // Err: propagated forward.
 func Flatten[T any](r Result[Result[T]]) Result[T] {
 	if r.IsOk() {
-		return r.Value
+		return r.Get()
 	}
-	return Err[T](r.Error)
+	return Err[T](r.Err())
 }
