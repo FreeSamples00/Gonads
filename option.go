@@ -58,7 +58,7 @@ func (o Option[T]) IsNone() bool {
 // None: panics.
 func (o Option[T]) Get() T {
 	if o.IsNone() {
-		panic("no value")
+		panic(ErrNone)
 	}
 	return o.val
 }

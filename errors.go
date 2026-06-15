@@ -1,6 +1,7 @@
 package gonads
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -31,3 +32,6 @@ func (e *PanicError) Unwrap() error {
 	}
 	return nil
 }
+
+// Simple error for Option
+var ErrNone = errors.New("Option: no value")
