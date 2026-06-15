@@ -151,14 +151,6 @@ func (r Result[T]) Map(fn func(T) T) Result[T] {
 	return r
 }
 
-// MapErr applies fn to the contained error.
-// Cannot recover the error.
-//
-// Ok: no-op.
-func (r Result[T]) MapErr(fn func(error) error) Result[T] {
-	return r.Catch(func(err error) Result[T] { return Err[T](fn(err)) })
-}
-
 // MapFlat applies fn to the contained value and returns the resulting Result.
 //
 // Err: propagated forward.
