@@ -1,4 +1,4 @@
-package option
+package gonads
 
 import (
 	"fmt"
@@ -80,4 +80,17 @@ func (o Option[V]) Map(fn func(V) V) Option[V] {
 		return Some(fn(o.Value))
 	}
 	return o
+}
+
+// Pack converts go native (v, ok) patterns into an Option.
+func Pack[V any](v V, ok bool) Option[V] {
+	if ok {
+		return Some(v)
+	}
+	return None[V]()
+}
+
+// Unpack convert Option into the go native (v, ok) pattern.
+func (o Option[V]) Unpack() (v V, ok bool) {
+	return o.Value, o.Valid
 }

@@ -1,4 +1,4 @@
-package result
+package gonads
 
 import (
 	"fmt"
@@ -9,6 +9,10 @@ type Result[V any] struct {
 	Value V
 	Error error
 }
+
+// ===== Constructors =====
+
+// ----- Direct -----
 
 // Ok wraps a value in a Result.
 // Type is inferred from the argument.
@@ -40,6 +44,8 @@ func Errf[V any](format string, args ...any) Result[V] {
 	return Result[V]{Error: fmt.Errorf(format, args...)}
 }
 
+// ----- From Go -----
+
 // Pack constructs a Result from a Go (V, error) return pair.
 // The inverse of Unpack.
 //
@@ -47,12 +53,28 @@ func Errf[V any](format string, args ...any) Result[V] {
 //
 //	Pack(os.ReadFile("data.txt"))    // Result[[]byte]
 //	Pack(strconv.Atoi("42"))         // Result[int]
-func Pack[V any](value V, err error) Result[V] {
+func PackResult[V any](value V, err error) Result[V] {
 	if err != nil {
 		return Err[V](err)
 	}
 	return Ok(value)
 }
+
+// ===== Methods =====
+
+// ----- Reporters -----
+
+// IsOk reports whether the Result contains a value.
+func (r Result[V]) IsOk() bool {
+	return r.Error == nil
+}
+
+// IsErr reports whether the Result contains an error.
+func (r Result[V]) IsErr() bool {
+	return r.Error != nil
+}
+
+// ----- Accessors -----
 
 // Get returns the contained value or panics with the stored error.
 func (r Result[V]) Get() V {
@@ -95,7 +117,20 @@ func (r Result[V]) OrElse(fn func(error) V) V {
 	return r.Value
 }
 
+// Unpack returns the Result as a Go (V, error) pair.
+// The inverse of Pack.
+//
+// Example:
+//
+//	value, err := r.Unpack()
+func (r Result[V]) Unpack() (V, error) {
+	return r.Value, r.Error
+}
+
+// ----- Mutators -----
+
 // Catch applies a function to the error to produce an alternative Result.
+// This can recover the error
 // Returns self if Ok.
 //
 // Examples:
@@ -109,17 +144,8 @@ func (r Result[V]) Catch(fn func(error) Result[V]) Result[V] {
 	return r
 }
 
-// IsOk reports whether the Result contains a value.
-func (r Result[V]) IsOk() bool {
-	return r.Error == nil
-}
-
-// IsErr reports whether the Result contains an error.
-func (r Result[V]) IsErr() bool {
-	return r.Error != nil
-}
-
 // MapErr applies a function to the contained error, leaving the value untouched.
+// This cannot recover the error.
 // Returns self if Ok.
 //
 // Examples:
@@ -134,8 +160,7 @@ func (r Result[V]) MapErr(fn func(error) error) Result[V] {
 }
 
 // FlatMap applies a function that returns Result to the contained value.
-// This method cannot change the inner type; for that, use the
-// package-level FlatMap function.
+// This method cannot change the inner type; for that, see `result.FlatMap()`.
 // Errors are propagated forward.
 //
 // Examples:
@@ -150,8 +175,7 @@ func (r Result[V]) FlatMap(lambda func(V) Result[V]) Result[V] {
 }
 
 // Map applies a function to the contained value, wrapping the result in Ok.
-// This method cannot change the inner type; for that, use the
-// package-level Map function.
+// This method cannot change the inner type; for that, see `result.Map()`.
 // Errors are propagated forward.
 //
 // Examples:
@@ -161,55 +185,6 @@ func (r Result[V]) FlatMap(lambda func(V) Result[V]) Result[V] {
 func (r Result[V]) Map(lambda func(V) V) Result[V] {
 	if r.IsOk() {
 		return Ok(lambda(r.Value))
-	}
-	return Err[V](r.Error)
-}
-
-// Unpack returns the Result as a Go (V, error) pair.
-// The inverse of Pack.
-//
-// Example:
-//
-//	value, err := r.Unpack()
-func (r Result[V]) Unpack() (V, error) {
-	return r.Value, r.Error
-}
-
-// FlatMap applies a function that returns Result to the contained value.
-// Unlike the method, this function can change the inner type from V to U.
-// Errors are propagated forward.
-//
-// Examples:
-//
-//	result.FlatMap(okInt, func(x int) Result[string] { return Ok("foo") })
-//	result.FlatMap(okInt, parse)
-func FlatMap[V any, U any](r Result[V], lambda func(V) Result[U]) Result[U] {
-	if r.IsOk() {
-		return lambda(r.Value)
-	}
-	return Err[U](r.Error)
-}
-
-// Map applies a function to the contained value, wrapping the result in Ok.
-// Unlike the method, this function can change the inner type from V to U.
-// Errors are propagated forward.
-//
-// Examples:
-//
-//	result.Map(okInt, func(x int) string { return "foo" })
-//	result.Map(okInt, strconv.Itoa)
-func Map[V any, U any](r Result[V], lambda func(V) U) Result[U] {
-	if r.IsOk() {
-		return Ok(lambda(r.Value))
-	}
-	return Err[U](r.Error)
-}
-
-// Flatten collapses a nested Result[Result[V]] into Result[V].
-// Propagates the outer error if present.
-func Flatten[V any](r Result[Result[V]]) Result[V] {
-	if r.IsOk() {
-		return r.Value
 	}
 	return Err[V](r.Error)
 }
