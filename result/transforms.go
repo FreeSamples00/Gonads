@@ -36,3 +36,9 @@ func Flatten[T any](r Result[Result[T]]) Result[T] {
 	}
 	return Err[T](r.Err())
 }
+
+// Pack converts a Go (v, error) return pair into a Result.
+// The inverse of Unpack.
+func Pack[T any](v T, err error) Result[T] {
+	return PackResult(v, err)
+}

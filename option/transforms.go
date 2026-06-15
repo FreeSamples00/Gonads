@@ -36,3 +36,9 @@ func Flatten[T any](o Option[Option[T]]) Option[T] {
 	}
 	return None[T]()
 }
+
+// Pack converts a Go (v, ok) return pair into an Option.
+// The inverse of Unpack.
+func Pack[T any](v T, ok bool) Option[T] {
+	return PackOption(v, ok)
+}
