@@ -11,7 +11,7 @@ import (
 //
 // Not computed: fn is deferred.
 func Map[I any, O any](o Once[I], fn func(I) O) Once[O] {
-	return Of(
+	return OneOf(
 		func() O {
 			return fn(
 				o.Get(),
@@ -24,7 +24,7 @@ func Map[I any, O any](o Once[I], fn func(I) O) Once[O] {
 //
 // Not computed: fn is deferred.
 func MapFlat[I any, O any](o Once[I], fn func(I) Once[O]) Once[O] {
-	return Of(
+	return OneOf(
 		func() O {
 			return fn(
 				o.Get(),

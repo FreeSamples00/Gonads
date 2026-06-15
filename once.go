@@ -6,7 +6,7 @@ import (
 )
 
 // Once holds a deferred computation that runs at most once.
-// The zero value is not useful — construct with Of.
+// The zero value is not useful — construct with OneOf.
 //
 // Once is safe to copy; copies share the same underlying state.
 type Once[T any] struct {
@@ -22,9 +22,9 @@ type onceState[T any] struct {
 
 // ----- Direct -----
 
-// Of returns a Once that defers fn until Get is called.
+// OneOf returns a Once that defers fn until Get is called.
 // fn is not invoked immediately.
-func Of[T any](fn func() T) Once[T] {
+func OneOf[T any](fn func() T) Once[T] {
 	return Once[T]{
 		state: &onceState[T]{
 			fn: sync.OnceValue(fn),
@@ -37,7 +37,7 @@ func Of[T any](fn func() T) Once[T] {
 // PackOnce lifts a plain value into a pre-computed Once.
 // Subesquent Gets return val without computation.
 func PackOnce[T any](val T) Once[T] {
-	o := Of(
+	o := OneOf(
 		func() T {
 			return val
 		},
@@ -73,7 +73,7 @@ func (o Once[T]) Get() T {
 //
 // Not computed: fn is deferred.
 func (o Once[T]) Map(fn func(T) T) Once[T] {
-	return Of(
+	return OneOf(
 		func() T {
 			return fn(
 				o.Get(),
@@ -86,7 +86,7 @@ func (o Once[T]) Map(fn func(T) T) Once[T] {
 //
 // Not computed: fn is deferred.
 func (o Once[T]) MapFlat(fn func(T) Once[T]) Once[T] {
-	return Of(
+	return OneOf(
 		func() T {
 			return fn(
 				o.Get(),
