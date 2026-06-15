@@ -5,9 +5,10 @@ import (
 )
 
 // Result holds either a value of type V or an error.
-type Result[V any] struct {
-	Value V
-	Error error
+type Result[T any] struct {
+	Value T     // Ok value
+	Error error // Err value
+	ok    bool  // sentinel values to protect raw creations
 }
 
 // ===== Constructors =====
@@ -20,8 +21,8 @@ type Result[V any] struct {
 // Example:
 //
 //	Ok(5) // Result[int]
-func Ok[V any](value V) Result[V] {
-	return Result[V]{Value: value}
+func Ok[T any](value T) Result[T] {
+	return Result[T]{Value: value, ok: true}
 }
 
 // Err wraps an error in a Result.
@@ -30,8 +31,8 @@ func Ok[V any](value V) Result[V] {
 // Example:
 //
 //	Err[int](fmt.Errorf("not found"))
-func Err[V any](err error) Result[V] {
-	return Result[V]{Error: err}
+func Err[T any](err error) Result[T] {
+	return Result[T]{Error: err, ok: false}
 }
 
 // Errf creates an error from a format string and wraps it in a Result.
@@ -40,8 +41,8 @@ func Err[V any](err error) Result[V] {
 // Example:
 //
 //	Errf[int]("not found: %d", i)
-func Errf[V any](format string, args ...any) Result[V] {
-	return Result[V]{Error: fmt.Errorf(format, args...)}
+func Errf[T any](format string, args ...any) Result[T] {
+	return Result[T]{Error: fmt.Errorf(format, args...), ok: false}
 }
 
 // ----- From Go -----
@@ -53,9 +54,9 @@ func Errf[V any](format string, args ...any) Result[V] {
 //
 //	Pack(os.ReadFile("data.txt"))    // Result[[]byte]
 //	Pack(strconv.Atoi("42"))         // Result[int]
-func PackResult[V any](value V, err error) Result[V] {
+func PackResult[T any](value T, err error) Result[T] {
 	if err != nil {
-		return Err[V](err)
+		return Err[T](err)
 	}
 	return Ok(value)
 }
@@ -65,19 +66,19 @@ func PackResult[V any](value V, err error) Result[V] {
 // ----- Reporters -----
 
 // IsOk reports whether the Result contains a value.
-func (r Result[V]) IsOk() bool {
-	return r.Error == nil
+func (r Result[T]) IsOk() bool {
+	return r.ok
 }
 
 // IsErr reports whether the Result contains an error.
-func (r Result[V]) IsErr() bool {
-	return r.Error != nil
+func (r Result[T]) IsErr() bool {
+	return !r.ok
 }
 
 // ----- Accessors -----
 
 // Get returns the contained value or panics with the stored error.
-func (r Result[V]) Get() V {
+func (r Result[T]) Get() T {
 	if !r.IsOk() {
 		panic(r.Error)
 	}
@@ -89,7 +90,7 @@ func (r Result[V]) Get() V {
 // Example:
 //
 //	r.Getf("failed to load config: %v", r.Error)
-func (r Result[V]) Getf(format string, args ...any) V {
+func (r Result[T]) Getf(format string, args ...any) T {
 	if r.IsErr() {
 		panic(fmt.Sprintf(format, args...))
 	}
@@ -97,7 +98,7 @@ func (r Result[V]) Getf(format string, args ...any) V {
 }
 
 // Or returns the contained value, or fallback if Err.
-func (r Result[V]) Or(fallback V) V {
+func (r Result[T]) Or(fallback T) T {
 	if r.IsErr() {
 		return fallback
 	}
@@ -110,7 +111,7 @@ func (r Result[V]) Or(fallback V) V {
 //
 //	r.OrElse(func(err error) int { return 0 })
 //	r.OrElse(fallbackFromErr)
-func (r Result[V]) OrElse(fn func(error) V) V {
+func (r Result[T]) OrElse(fn func(error) T) T {
 	if r.IsErr() {
 		return fn(r.Error)
 	}
@@ -123,55 +124,25 @@ func (r Result[V]) OrElse(fn func(error) V) V {
 // Example:
 //
 //	value, err := r.Unpack()
-func (r Result[V]) Unpack() (V, error) {
+func (r Result[T]) Unpack() (T, error) {
 	return r.Value, r.Error
 }
 
 // ----- Mutators -----
 
 // Catch applies a function to the error to produce an alternative Result.
-// This can recover the error
+// This can recover from the error.
 // Returns self if Ok.
 //
 // Examples:
 //
 //	r.Catch(func(err error) Result[int] { return Ok(0) })
 //	r.Catch(fallbackResult)
-func (r Result[V]) Catch(fn func(error) Result[V]) Result[V] {
+func (r Result[T]) Catch(fn func(error) Result[T]) Result[T] {
 	if r.IsErr() {
 		return fn(r.Error)
 	}
 	return r
-}
-
-// MapErr applies a function to the contained error, leaving the value untouched.
-// This cannot recover the error.
-// Returns self if Ok.
-//
-// Examples:
-//
-//	r.MapErr(func(err error) error { return fmt.Errorf("parse: %w", err) })
-//	r.MapErr(wrapErr)
-func (r Result[V]) MapErr(fn func(error) error) Result[V] {
-	if r.IsErr() {
-		return Err[V](fn(r.Error))
-	}
-	return r
-}
-
-// FlatMap applies a function that returns Result to the contained value.
-// This method cannot change the inner type; for that, see `result.FlatMap()`.
-// Errors are propagated forward.
-//
-// Examples:
-//
-//	foo.FlatMap(func(x int) Result[int] { return Ok(x + 5) })
-//	foo.FlatMap(bar)
-func (r Result[V]) FlatMap(lambda func(V) Result[V]) Result[V] {
-	if r.IsOk() {
-		return lambda(r.Value)
-	}
-	return Err[V](r.Error)
 }
 
 // Map applies a function to the contained value, wrapping the result in Ok.
@@ -182,9 +153,36 @@ func (r Result[V]) FlatMap(lambda func(V) Result[V]) Result[V] {
 //
 //	foo.Map(func(x int) int { return x + 5 })
 //	foo.Map(bar)
-func (r Result[V]) Map(lambda func(V) V) Result[V] {
+func (r Result[T]) Map(fn func(T) T) Result[T] {
 	if r.IsOk() {
-		return Ok(lambda(r.Value))
+		return Ok(fn(r.Value))
 	}
-	return Err[V](r.Error)
+	return Err[T](r.Error)
+}
+
+// MapErr applies a function to the contained error, leaving the value untouched.
+// This cannot recover the error.
+// Returns self if Ok.
+//
+// Examples:
+//
+//	r.MapErr(func(err error) error { return fmt.Errorf("parse: %w", err) })
+//	r.MapErr(wrapErr)
+func (r Result[T]) MapErr(fn func(error) error) Result[T] {
+	return r.Catch(func(err error) Result[T] { return Err[T](fn(err)) })
+}
+
+// MapFlat applies a function that returns Result to the contained value.
+// This method cannot change the inner type; for that, see `result.MapFlat()`.
+// Errors are propagated forward.
+//
+// Examples:
+//
+//	foo.MapFlat(func(x int) Result[int] { return Ok(x + 5) })
+//	foo.MapFlat(bar)
+func (r Result[T]) MapFlat(fn func(T) Result[T]) Result[T] {
+	if r.IsOk() {
+		return fn(r.Value)
+	}
+	return Err[T](r.Error)
 }

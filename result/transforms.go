@@ -7,19 +7,19 @@ import (
 	. "github.com/FreeSamples00/gonads"
 )
 
-// FlatMap applies a function that returns Result to the contained value.
+// MapFlat applies a function that returns Result to the contained value.
 // Unlike the method, this function can change the inner type from V to U.
 // Errors are propagated forward.
 //
 // Examples:
 //
-//	result.FlatMap(okInt, func(x int) Result[string] { return Ok("foo") })
-//	result.FlatMap(okInt, parse)
-func FlatMap[V any, U any](r Result[V], lambda func(V) Result[U]) Result[U] {
+//	result.MapFlat(okInt, func(x int) Result[string] { return Ok("foo") })
+//	result.MapFlat(okInt, parse)
+func MapFlat[I any, O any](r Result[I], lambda func(I) Result[O]) Result[O] {
 	if r.IsOk() {
 		return lambda(r.Value)
 	}
-	return Err[U](r.Error)
+	return Err[O](r.Error)
 }
 
 // Map applies a function to the contained value, wrapping the result in Ok.
@@ -30,18 +30,18 @@ func FlatMap[V any, U any](r Result[V], lambda func(V) Result[U]) Result[U] {
 //
 //	result.Map(okInt, func(x int) string { return "foo" })
 //	result.Map(okInt, strconv.Itoa)
-func Map[V any, U any](r Result[V], lambda func(V) U) Result[U] {
+func Map[I any, O any](r Result[I], lambda func(I) O) Result[O] {
 	if r.IsOk() {
 		return Ok(lambda(r.Value))
 	}
-	return Err[U](r.Error)
+	return Err[O](r.Error)
 }
 
 // Flatten collapses a nested Result[Result[V]] into Result[V].
 // Propagates the outer error if present.
-func Flatten[V any](r Result[Result[V]]) Result[V] {
+func Flatten[T any](r Result[Result[T]]) Result[T] {
 	if r.IsOk() {
 		return r.Value
 	}
-	return Err[V](r.Error)
+	return Err[T](r.Error)
 }
