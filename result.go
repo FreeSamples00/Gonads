@@ -2,6 +2,7 @@ package gonads
 
 import (
 	"fmt"
+	"runtime/debug"
 )
 
 // Result holds either a value of type T or an error.
@@ -42,6 +43,22 @@ func PackResult[T any](value T, err error) Result[T] {
 		return Err[T](err)
 	}
 	return Ok(value)
+}
+
+// ----- Panic-safe -----
+
+// Try calls fn and wraps the result in Ok.
+// If fn panics, returns Err with a *PanicError capturing the panic value and stack trace.
+func Try[T any](fn func() T) (result Result[T]) {
+	defer func() {
+		if r := recover(); r != nil {
+			result = Err[T](&PanicError{
+				Value: r,
+				Stack: string(debug.Stack()),
+			})
+		}
+	}()
+	return Ok(fn())
 }
 
 // ===== Methods =====
