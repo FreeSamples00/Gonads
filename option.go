@@ -37,6 +37,24 @@ func PackOption[T any](v T, ok bool) Option[T] {
 	return None[T]()
 }
 
+// Lookup returns the value for key k in map m.
+//
+// Key absent: returns None.
+//
+// TODO: implement
+func Lookup[M ~map[K]V, K comparable, V any](m M, k K) Option[V] {
+	panic("TODO: Lookup")
+}
+
+// Assert attempts a type assertion of v to type T.
+//
+// Assertion fails: returns None.
+//
+// TODO: implement
+func Assert[T any](v any) Option[T] {
+	panic("TODO: Assert")
+}
+
 // ===== Methods =====
 
 // ----- Reporters -----

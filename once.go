@@ -34,9 +34,9 @@ func OneOf[T any](fn func() T) Once[T] {
 
 // ----- From Go -----
 
-// PackOnce lifts a plain value into a pre-computed Once.
-// Subesquent Gets return val without computation.
-func PackOnce[T any](val T) Once[T] {
+// Cached lifts a plain value into a pre-computed Once.
+// Subsequent Gets return val without computation.
+func Cached[T any](val T) Once[T] {
 	o := OneOf(
 		func() T {
 			return val
@@ -67,30 +67,4 @@ func (o Once[T]) Get() T {
 	return o.state.fn()
 }
 
-// ----- Mutators -----
 
-// Map applies fn to the contained value, wrapping the result in a new Once.
-//
-// Not computed: fn is deferred.
-func (o Once[T]) Map(fn func(T) T) Once[T] {
-	return OneOf(
-		func() T {
-			return fn(
-				o.Get(),
-			)
-		},
-	)
-}
-
-// MapFlat applies fn to the contained value and returns the resulting Once.
-//
-// Not computed: fn is deferred.
-func (o Once[T]) MapFlat(fn func(T) Once[T]) Once[T] {
-	return OneOf(
-		func() T {
-			return fn(
-				o.Get(),
-			).Get()
-		},
-	)
-}

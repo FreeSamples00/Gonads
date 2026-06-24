@@ -27,18 +27,4 @@ func MapFlat[I any, O any](r Result[I], fn func(I) Result[O]) Result[O] {
 	return Err[O](r.Err())
 }
 
-// Flatten collapses a nested Result[Result[T]] into Result[T].
-//
-// Err: propagated forward.
-func Flatten[T any](r Result[Result[T]]) Result[T] {
-	if r.IsOk() {
-		return r.Get()
-	}
-	return Err[T](r.Err())
-}
 
-// Pack converts a Go (v, error) return pair into a Result.
-// The inverse of Unpack.
-func Pack[T any](v T, err error) Result[T] {
-	return PackResult(v, err)
-}

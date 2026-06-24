@@ -27,18 +27,4 @@ func MapFlat[I any, O any](o Option[I], fn func(I) Option[O]) Option[O] {
 	return None[O]()
 }
 
-// Flatten collapses a nested Option[Option[T]] into Option[T].
-//
-// None: propagated forward.
-func Flatten[T any](o Option[Option[T]]) Option[T] {
-	if o.IsSome() {
-		return o.Get()
-	}
-	return None[T]()
-}
 
-// Pack converts a Go (v, ok) return pair into an Option.
-// The inverse of Unpack.
-func Pack[T any](v T, ok bool) Option[T] {
-	return PackOption(v, ok)
-}
