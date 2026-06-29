@@ -9,7 +9,7 @@ import (
 type Result[T any] struct {
 	val T     // Ok value
 	err error // Err value
-	ok  bool  // sentinel values to protect raw creations
+	ok  bool  // state indicator
 }
 
 // ===== Constructors =====
@@ -36,30 +36,8 @@ func Errf[T any](format string, args ...any) Result[T] {
 
 // ----- From Go -----
 
-// PackResult converts a Go (v, error) return pair into a Result.
-// The inverse of Unpack.
-func PackResult[T any](value T, err error) Result[T] {
-	if err != nil {
-		return Err[T](err)
-	}
-	return Ok(value)
-}
-
 // ----- Panic-safe -----
 
-// Try calls fn and wraps the result in Ok.
-// If fn panics, returns Err with a *PanicError capturing the panic value and stack trace.
-func Try[T any](fn func() T) (result Result[T]) {
-	defer func() {
-		if r := recover(); r != nil {
-			result = Err[T](&PanicError{
-				Value: r,
-				Stack: string(debug.Stack()),
-			})
-		}
-	}()
-	return Ok(fn())
-}
 
 // ===== Methods =====
 
@@ -81,44 +59,44 @@ func (r Result[T]) IsErr() bool {
 //
 // Err: panics with stored error.
 func (r Result[T]) Get() T {
-	if !r.IsOk() {
-		panic(r.err)
+	if r.IsOk() {
+		return r.val
 	}
-	return r.val
+	panic(r.err)
 }
 
 // Getf returns the contained value.
 //
 // Err: panics with formatted message.
 func (r Result[T]) Getf(format string, args ...any) T {
-	if r.IsErr() {
-		panic(fmt.Sprintf(format, args...))
+	if r.IsOk() {
+		return r.val
 	}
-	return r.val
+	panic(fmt.Sprintf(format, args...))
 }
 
 // Or returns the contained value.
 //
 // Err: returns fallback.
 func (r Result[T]) Or(fallback T) T {
-	if r.IsErr() {
-		return fallback
+	if r.IsOk() {
+		return r.val
 	}
-	return r.val
+	return fallback
 }
 
 // OrElse returns the contained value.
 //
 // Err: calls fn with error, returns its result.
 func (r Result[T]) OrElse(fn func(error) T) T {
-	if r.IsErr() {
-		return fn(r.err)
+	if r.IsOk() {
+		return r.val
 	}
-	return r.val
+	return fn(r.err)
 }
 
-// Err returns the contained error.
-func (r Result[T]) Err() error {
+// GetErr returns the contained error.
+func (r Result[T]) GetErr() error {
 	return r.err
 }
 
@@ -133,30 +111,61 @@ func (r Result[T]) Unpack() (T, error) {
 // Catch applies fn to the contained error to produce an alternative Result.
 // Can recover from the error.
 //
-// Ok: no-op.
+// Ok: no-op
 func (r Result[T]) Catch(fn func(error) Result[T]) Result[T] {
-	if r.IsErr() {
-		return fn(r.err)
+	if r.IsOk() {
+		return r
 	}
-	return r
+	return fn(r.err)
 }
 
 // Map applies fn to the contained value, wrapping the result in Ok.
 //
 // Err: propagated forward.
-func (r Result[T]) Map(fn func(T) T) Result[T] {
+func (r Result[T]) Map[O any](fn func(T) O) Result[O] {
 	if r.IsOk() {
-		return Ok(fn(r.val))
+		return Ok[O](fn(r.val))
 	}
-	return r
+	return Err[O](r.err)
 }
 
 // MapFlat applies fn to the contained value and returns the resulting Result.
 //
 // Err: propagated forward.
-func (r Result[T]) MapFlat(fn func(T) Result[T]) Result[T] {
+func (r Result[T]) MapFlat[O any](fn func(T) Result[O]) Result[O] {
 	if r.IsOk() {
 		return fn(r.val)
 	}
-	return r
+	return Err[O](r.err)
+}
+
+// And replaces the contained value.
+//
+// Err: propagated forward.
+func (r Result[T]) And[O any](other Result[O]) Result[O] {
+	if r.IsOk() {
+		return other
+	}
+	return Err[O](r.err)
+}
+
+// MapOrElse conditionally applies one of two functions.
+//
+// Ok: okfn(val)
+// Err: errfn(err)
+func (r Result[T]) MapOrElse[O any](okfn func(T) O, errfn func(error) O) O {
+	if r.IsOk() {
+		return okfn(r.val)
+	}
+	return errfn(r.err)
+}
+
+// MapErr replaces err content.
+//
+// Ok: no-op.
+func (r Result[T]) MapErr(fn func(error) error) Result[T] {
+	if r.IsOk() {
+		return r
+	}
+	return Err[T](fn(r.err))
 }

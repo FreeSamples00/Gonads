@@ -6,7 +6,7 @@ import (
 
 // Option holds either a value or represents a null value.
 type Option[T any] struct {
-	val   T    // Some value
+	val   T    // Value
 	valid bool // None indicator
 }
 
@@ -28,32 +28,6 @@ func None[T any]() Option[T] {
 
 // ----- From Go -----
 
-// PackOption converts a Go (v, ok) return pair into an Option.
-// The inverse of Unpack.
-func PackOption[T any](v T, ok bool) Option[T] {
-	if ok {
-		return Some(v)
-	}
-	return None[T]()
-}
-
-// Lookup returns the value for key k in map m.
-//
-// Key absent: returns None.
-//
-// TODO: implement
-func Lookup[M ~map[K]V, K comparable, V any](m M, k K) Option[V] {
-	panic("TODO: Lookup")
-}
-
-// Assert attempts a type assertion of v to type T.
-//
-// Assertion fails: returns None.
-//
-// TODO: implement
-func Assert[T any](v any) Option[T] {
-	panic("TODO: Assert")
-}
 
 // ===== Methods =====
 
@@ -121,18 +95,18 @@ func (o Option[T]) Unpack() (v T, ok bool) {
 
 // Map applies fn to the contained value, wrapping the result in Some.
 //
-// None: no-op.
-func (o Option[T]) Map(fn func(T) T) Option[T] {
+// None: propagated forward
+func (o Option[T]) Map[O any](fn func(T) O) Option[O] {
 	if o.IsSome() {
 		return Some(fn(o.val))
 	}
-	return o
+	return None[O]()
 }
 
-// MapNone calls fn and returns its result.
+// Default replaces none with result of fn.
 //
-// Some: no-op.
-func (o Option[T]) MapNone(fn func() Option[T]) Option[T] {
+// Some: propagated forward.
+func (o Option[T]) Default(fn func() Option[T]) Option[T] {
 	if o.IsNone() {
 		return fn()
 	}
@@ -141,10 +115,31 @@ func (o Option[T]) MapNone(fn func() Option[T]) Option[T] {
 
 // MapFlat applies fn to the contained value and returns the resulting Option.
 //
-// None: no-op.
-func (o Option[T]) MapFlat(fn func(T) Option[T]) Option[T] {
+// None: propagated forward
+func (o Option[T]) MapFlat[O any](fn func(T) Option[O]) Option[O] {
 	if o.IsSome() {
 		return fn(o.val)
 	}
-	return o
+	return None[O]()
+}
+
+// MapOrElse conditionally applies one of two functions.
+//
+// Some: somefn(val)
+// None: nonefn()
+func (o Option[T]) MapOrElse[O any](somefn func(T) O, nonefn func() O) O {
+	if o.IsSome() {
+		return somefn(o.val)
+	}
+	return nonefn()
+}
+
+// And replaces the contained value.
+//
+// None: propagated forward
+func (o Option[T]) And[O any](other Option[O]) Option[O] {
+	if o.IsSome() {
+		return other
+	}
+	return None[O]()
 }

@@ -66,5 +66,3 @@ func (o Once[T]) Get() T {
 	defer o.state.done.Store(true)
 	return o.state.fn()
 }
-
-
