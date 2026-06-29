@@ -1,17 +1,12 @@
-package gonads
+package utils
 
-import "runtime/debug"
+import (
+	"runtime/debug"
+
+	. "github.com/FreeSamples00/gonads"
+)
 
 // ===== Option =====
-
-// PackOption converts a Go (v, ok) return pair into an Option.
-// The inverse of Unpack.
-func PackOption[T any](v T, ok bool) Option[T] {
-	if ok {
-		return Some(v)
-	}
-	return None[T]()
-}
 
 // Lookup returns the value for key k in map m.
 //
@@ -35,13 +30,4 @@ func Try[T any](fn func() T) (result Result[T]) {
 		}
 	}()
 	return Ok(fn())
-}
-
-// PackResult converts a Go (v, error) return pair into a Result.
-// The inverse of Unpack.
-func PackResult[T any](value T, err error) Result[T] {
-	if err != nil {
-		return Err[T](err)
-	}
-	return Ok(value)
 }

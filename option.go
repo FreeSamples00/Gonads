@@ -88,6 +88,15 @@ func (o Option[T]) Unpack() (v T, ok bool) {
 	return o.val, o.valid
 }
 
+// PackOption converts a Go (v, ok) return pair into an Option.
+// The inverse of Unpack.
+func PackOption[T any](v T, ok bool) Option[T] {
+	if ok {
+		return Some(v)
+	}
+	return None[T]()
+}
+
 // ----- Mutators -----
 
 // Map applies fn to the contained value, wrapping the result in Some.

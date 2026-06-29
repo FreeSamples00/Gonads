@@ -100,6 +100,15 @@ func (r Result[T]) Unpack() (T, error) {
 	return r.val, r.err
 }
 
+// PackResult converts a Go (v, error) return pair into a Result.
+// The inverse of Unpack.
+func PackResult[T any](value T, err error) Result[T] {
+	if err != nil {
+		return Err[T](err)
+	}
+	return Ok(value)
+}
+
 // ----- Mutators -----
 
 // Catch applies fn to the contained error to produce an alternative Result.
