@@ -2,6 +2,8 @@ package gonads
 
 import "runtime/debug"
 
+// ===== Option =====
+
 // PackOption converts a Go (v, ok) return pair into an Option.
 // The inverse of Unpack.
 func PackOption[T any](v T, ok bool) Option[T] {
@@ -18,6 +20,8 @@ func Lookup[M ~map[K]V, K comparable, V any](m M, k K) Option[V] {
 	v, ok := m[k]
 	return PackOption(v, ok)
 }
+
+// ===== Result =====
 
 // Try calls fn and wraps the result in Ok.
 // If fn panics, returns Err with a *PanicError capturing the panic value and stack trace.

@@ -26,9 +26,6 @@ func None[T any]() Option[T] {
 	return Option[T]{valid: false}
 }
 
-// ----- From Go -----
-
-
 // ===== Methods =====
 
 // ----- Reporters -----
@@ -142,4 +139,17 @@ func (o Option[T]) And[O any](other Option[O]) Option[O] {
 		return other
 	}
 	return None[O]()
+}
+
+// ----- Conversions -----
+
+// ToResult converts to a Result type.
+//
+// Some: value transfers
+// None: Result with ErrNone returned
+func (o Option[T]) ToResult() Result[T] {
+	if o.IsNone() {
+		return Err[T](ErrNone)
+	}
+	return Ok(o.val)
 }

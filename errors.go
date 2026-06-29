@@ -22,7 +22,7 @@ func (e *PanicError) Error() string {
 	return fmt.Sprintf("%v", e.Value)
 }
 
-// Unwrap returns the underlying error for errors.Is/As chaining.
+// Unwrap returns the underlying error.
 //
 // Value is error: returns Value.
 // Otherwise: returns nil.

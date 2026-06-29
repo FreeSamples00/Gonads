@@ -2,7 +2,6 @@ package gonads
 
 import (
 	"fmt"
-	"runtime/debug"
 )
 
 // Result holds either a value of type T or an error.
@@ -33,11 +32,6 @@ func Err[T any](err error) Result[T] {
 func Errf[T any](format string, args ...any) Result[T] {
 	return Result[T]{err: fmt.Errorf(format, args...), ok: false}
 }
-
-// ----- From Go -----
-
-// ----- Panic-safe -----
-
 
 // ===== Methods =====
 
@@ -168,4 +162,17 @@ func (r Result[T]) MapErr(fn func(error) error) Result[T] {
 		return r
 	}
 	return Err[T](fn(r.err))
+}
+
+// ----- Conversions -----
+
+// ToOption converts to an Option type.
+//
+// Ok: value transfers
+// Err: None returned
+func (r Result[T]) ToOption() Option[T] {
+	if r.IsErr() {
+		return None[T]()
+	}
+	return Some(r.val)
 }
