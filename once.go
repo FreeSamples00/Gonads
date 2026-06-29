@@ -51,7 +51,12 @@ func Cached[T any](val T) Once[T] {
 // ----- Reporters -----
 
 // IsDone reports whether Get has been called and returned.
+//
+// Zero value: returns false.
 func (o Once[T]) IsDone() bool {
+	if o.state == nil {
+		return false
+	}
 	return o.state.done.Load()
 }
 
@@ -60,9 +65,13 @@ func (o Once[T]) IsDone() bool {
 // Get forces evaluation and returns the cached result.
 // Subsequent calls return the same value without re-running fn.
 //
+// Zero value: panics with "Once: not initialized (zero value)".
 // Panic: if fn panics, Get re-panics with the stored value on every call.
 // Concurrent calls are safe, all block until the first computation completes.
 func (o Once[T]) Get() T {
+	if o.state == nil {
+		panic("Once: not initialized (zero value)")
+	}
 	defer o.state.done.Store(true)
 	return o.state.fn()
 }
