@@ -26,6 +26,19 @@ func None[T any]() Option[T] {
 	return Option[T]{valid: false}
 }
 
+// ----- From Go -----
+
+// PackPtr converts a Go pointer into an Option.
+// The inverse of ToPtr.
+//
+// nil pointer: returns None.
+// non-nil pointer: returns Some(*ptr).
+//
+// TODO: implement PackPtr
+func PackPtr[T any](ptr *T) Option[T] {
+	panic("TODO: PackPtr")
+}
+
 // ===== Methods =====
 
 // ----- Reporters -----
@@ -95,6 +108,17 @@ func PackOption[T any](v T, ok bool) Option[T] {
 		return Some(v)
 	}
 	return None[T]()
+}
+
+// ToPtr converts the Option to a Go pointer.
+// The inverse of PackPtr.
+//
+// None: returns nil.
+// Some: returns pointer to the contained value.
+//
+// TODO: implement ToPtr
+func (o Option[T]) ToPtr() *T {
+	panic("TODO: ToPtr")
 }
 
 // ----- Mutators -----
