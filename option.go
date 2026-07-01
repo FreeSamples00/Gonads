@@ -153,11 +153,11 @@ func (o Option[T]) MapFlat[O any](fn func(T) Option[O]) Option[O] {
 	return None[O]()
 }
 
-// MapOrElse conditionally applies one of two functions.
+// Match conditionally applies one of two functions.
 //
 // Some: somefn(val)
 // None: nonefn()
-func (o Option[T]) MapOrElse[O any](somefn func(T) O, nonefn func() O) O {
+func (o Option[T]) Match[O any](somefn func(T) O, nonefn func() O) O {
 	if o.IsSome() {
 		return somefn(o.val)
 	}

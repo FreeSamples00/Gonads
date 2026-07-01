@@ -152,11 +152,11 @@ func (r Result[T]) And[O any](other Result[O]) Result[O] {
 	return Err[O](r.err)
 }
 
-// MapOrElse conditionally applies one of two functions.
+// Match conditionally applies one of two functions.
 //
 // Ok: okfn(val)
 // Err: errfn(err)
-func (r Result[T]) MapOrElse[O any](okfn func(T) O, errfn func(error) O) O {
+func (r Result[T]) Match[O any](okfn func(T) O, errfn func(error) O) O {
 	if r.IsOk() {
 		return okfn(r.val)
 	}
