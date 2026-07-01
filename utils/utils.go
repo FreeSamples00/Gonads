@@ -31,3 +31,25 @@ func Try[T any](fn func() T) (result Result[T]) {
 	}()
 	return Ok(fn())
 }
+
+// ===== Collection combinators =====
+
+// Sequence converts a slice of Options into an Option of slice.
+//
+// All Some: returns Some containing all values.
+// Any None: returns None.
+//
+// TODO: implement Sequence
+func Sequence[T any](s []Option[T]) Option[[]T] {
+	panic("TODO: Sequence")
+}
+
+// Collect converts a slice of Results into a Result of slice.
+//
+// All Ok: returns Ok containing all values.
+// Any Err: returns the first Err.
+//
+// TODO: implement Collect
+func Collect[T any](s []Result[T]) Result[[]T] {
+	panic("TODO: Collect")
+}
