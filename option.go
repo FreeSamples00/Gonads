@@ -153,15 +153,27 @@ func (o Option[T]) MapFlat[O any](fn func(T) Option[O]) Option[O] {
 	return None[O]()
 }
 
-// Match conditionally applies one of two functions.
+// Fold collapses the Option into a single value.
 //
 // Some: somefn(val)
 // None: nonefn()
-func (o Option[T]) Match[O any](somefn func(T) O, nonefn func() O) O {
+func (o Option[T]) Fold[O any](somefn func(T) O, nonefn func() O) O {
 	if o.IsSome() {
 		return somefn(o.val)
 	}
 	return nonefn()
+}
+
+// Match dispatches to one of two side-effect functions.
+//
+// Some: somefn(val)
+// None: nonefn()
+func (o Option[T]) Match(somefn func(T), nonefn func()) {
+	if o.IsSome() {
+		somefn(o.val)
+	} else {
+		nonefn()
+	}
 }
 
 // And replaces the contained value.

@@ -8,8 +8,8 @@ package gonads
 // Ok(None):    nonefn()
 // Err(e):      errfn(e)
 func Fold[T, O any](r Result[Option[T]], okfn func(T) O, nonefn func() O, errfn func(error) O) O {
-	return r.Match(
-		func(o Option[T]) O { return o.Match(okfn, nonefn) },
+	return r.Fold(
+		func(o Option[T]) O { return o.Fold(okfn, nonefn) },
 		errfn,
 	)
 }

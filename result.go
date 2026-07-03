@@ -152,15 +152,27 @@ func (r Result[T]) And[O any](other Result[O]) Result[O] {
 	return Err[O](r.err)
 }
 
-// Match conditionally applies one of two functions.
+// Fold collapses the Result into a single value.
 //
 // Ok: okfn(val)
 // Err: errfn(err)
-func (r Result[T]) Match[O any](okfn func(T) O, errfn func(error) O) O {
+func (r Result[T]) Fold[O any](okfn func(T) O, errfn func(error) O) O {
 	if r.IsOk() {
 		return okfn(r.val)
 	}
 	return errfn(r.err)
+}
+
+// Match dispatches to one of two side-effect functions.
+//
+// Ok: okfn(val)
+// Err: errfn(err)
+func (r Result[T]) Match(okfn func(T), errfn func(error)) {
+	if r.IsOk() {
+		okfn(r.val)
+	} else {
+		errfn(r.err)
+	}
 }
 
 // MapErr replaces err content.
