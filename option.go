@@ -133,6 +133,16 @@ func (o Option[T]) Map[O any](fn func(T) O) Option[O] {
 	return None[O]()
 }
 
+// Filter keeps the value only if fn returns true.
+//
+// None: propagated forward.
+func (o Option[T]) Filter(fn func(T) bool) Option[T] {
+	if o.IsSome() && fn(o.val) {
+		return o
+	}
+	return None[T]()
+}
+
 // Default replaces none with result of fn.
 //
 // Some: propagated forward.
