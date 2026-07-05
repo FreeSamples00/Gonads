@@ -14,7 +14,7 @@ type PanicError struct {
 // Error returns the message of the caught panic.
 //
 // Value is error: returns its Error string.
-// Otherwise: returns fmt.Sprintf("%v", Value).
+// Otherwise:      returns fmt.Sprintf("%v", Value).
 func (e *PanicError) Error() string {
 	if err, ok := e.Value.(error); ok {
 		return err.Error()
@@ -25,7 +25,7 @@ func (e *PanicError) Error() string {
 // Unwrap returns the underlying error.
 //
 // Value is error: returns Value.
-// Otherwise: returns nil.
+// Otherwise:      returns nil.
 func (e *PanicError) Unwrap() error {
 	if err, ok := e.Value.(error); ok {
 		return err
