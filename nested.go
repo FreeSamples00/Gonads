@@ -4,12 +4,34 @@ package gonads
 
 // Fold collapses all three states of a Result[Option].
 //
-// Ok(Some(v)): okfn(v)
+// Ok(Some(v)): valfn(v)
 // Ok(None):    nonefn()
 // Err(e):      errfn(e)
-func Fold[T, O any](r Result[Option[T]], okfn func(T) O, nonefn func() O, errfn func(error) O) O {
+func Fold[T, O any](r Result[Option[T]], valfn func(T) O, nonefn func() O, errfn func(error) O) O {
 	return r.Fold(
-		func(o Option[T]) O { return o.Fold(okfn, nonefn) },
+		func(o Option[T]) O {
+			return o.Fold(
+				valfn,
+				nonefn,
+			)
+		},
+		errfn,
+	)
+}
+
+// Match dispatches to one of three side-effect functions.
+//
+// Ok(Some(v)): valfn(v)
+// Ok(None):    nonefn()
+// Err(e):      errfn(e)
+func Match[T any](r Result[Option[T]], valfn func(T), nonefn func(), errfn func(error)) {
+	r.Match(
+		func(o Option[T]) {
+			o.Match(
+				valfn,
+				nonefn,
+			)
+		},
 		errfn,
 	)
 }
