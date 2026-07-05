@@ -71,18 +71,18 @@ func Find[T any](s []T, fn func(T) bool) Option[T] {
 
 // ===== Collection combinators =====
 
-// Sequence converts a slice of Options into an Option of slice.
+// CollectOption converts a slice of Options into an Option of slice.
 //
 // All Some: Creates Some containing all values.
 // Any None: Creates None.
-func Sequence[T any](s []Option[T]) Option[[]T] {
-	panic("TODO: Sequence")
+func CollectOption[T any](s []Option[T]) Option[[]T] {
+	panic("TODO: CollectOption")
 }
 
-// Collect converts a slice of Results into a Result of slice.
+// CollectResult converts a slice of Results into a Result of slice.
 //
 // All Ok:  Creates Ok containing all values.
 // Any Err: Creates Err of the first error.
-func Collect[T any](s []Result[T]) Result[[]T] {
-	panic("TODO: Collect")
+func CollectResult[T any](s []Result[T]) Result[[]T] {
+	panic("TODO: CollectResult")
 }
