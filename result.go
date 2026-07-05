@@ -59,16 +59,6 @@ func (r Result[T]) Get() T {
 	panic(r.err)
 }
 
-// Getf returns the contained value.
-//
-// Err: panics with formatted message.
-func (r Result[T]) Getf(format string, args ...any) T {
-	if r.IsOk() {
-		return r.val
-	}
-	panic(fmt.Sprintf(format, args...))
-}
-
 // Or returns the contained value.
 //
 // Err: returns fallback.
@@ -91,6 +81,9 @@ func (r Result[T]) OrElse(fn func(error) T) T {
 
 // GetErr returns the contained error.
 func (r Result[T]) GetErr() error {
+	if r.IsOk() {
+		panic(ErrNotErr)
+	}
 	return r.err
 }
 

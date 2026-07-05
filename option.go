@@ -1,9 +1,5 @@
 package gonads
 
-import (
-	"fmt"
-)
-
 // Option holds either a value or represents a null value.
 type Option[T any] struct {
 	val   T    // Value
@@ -61,16 +57,6 @@ func (o Option[T]) IsNone() bool {
 func (o Option[T]) Get() T {
 	if o.IsNone() {
 		panic(ErrNone)
-	}
-	return o.val
-}
-
-// Getf returns the contained value.
-//
-// None: panics with formatted message.
-func (o Option[T]) Getf(format string, args ...any) T {
-	if o.IsNone() {
-		panic(fmt.Sprintf(format, args...))
 	}
 	return o.val
 }
