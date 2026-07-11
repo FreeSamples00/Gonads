@@ -42,7 +42,10 @@ func Try[T any](fn func() T) (result Result[T]) {
 // Non-empty: Creates Some(s[0]).
 // Empty:     Creates None.
 func First[T any](s []T) Option[T] {
-	panic("TODO: First")
+	if len(s) > 0 {
+		return Some(s[0])
+	}
+	return None[T]()
 }
 
 // Last returns an Option containing the last element.
@@ -50,7 +53,10 @@ func First[T any](s []T) Option[T] {
 // Non-empty: Creates Some(s[len(s)-1]).
 // Empty:     Creates None.
 func Last[T any](s []T) Option[T] {
-	panic("TODO: Last")
+	if len(s) > 0 {
+		return Some(s[len(s)-1])
+	}
+	return None[T]()
 }
 
 // At returns an Option containing the element at index i.
@@ -58,7 +64,10 @@ func Last[T any](s []T) Option[T] {
 // In bounds:     Creates Some(s[i]).
 // Out of bounds: Creates None.
 func At[T any](s []T, i int) Option[T] {
-	panic("TODO: At")
+	if len(s) > i {
+		return Some(s[i])
+	}
+	return None[T]()
 }
 
 // Find returns an Option containing the first element matching fn.
@@ -66,7 +75,12 @@ func At[T any](s []T, i int) Option[T] {
 // Match found: Creates Some(s[i]).
 // No match:     Creates None.
 func Find[T any](s []T, fn func(T) bool) Option[T] {
-	panic("TODO: Find")
+	for i := 0; i < len(s); i++ {
+		if fn(s[i]) {
+			return Some(s[i])
+		}
+	}
+	return None[T]()
 }
 
 // ===== Collection combinators =====
@@ -76,7 +90,15 @@ func Find[T any](s []T, fn func(T) bool) Option[T] {
 // All Some: Creates Some containing all values.
 // Any None: Creates None.
 func CollectOption[T any](s []Option[T]) Option[[]T] {
-	panic("TODO: CollectOption")
+	r := make([]T, len(s))
+	for i := 0; i < len(s); i++ {
+		if s[i].IsSome() {
+			r[i] = s[i].Get()
+		} else {
+			return None[[]T]()
+		}
+	}
+	return Some(r)
 }
 
 // CollectResult converts a slice of Results into a Result of slice.
@@ -84,5 +106,13 @@ func CollectOption[T any](s []Option[T]) Option[[]T] {
 // All Ok:  Creates Ok containing all values.
 // Any Err: Creates Err of the first error.
 func CollectResult[T any](s []Result[T]) Result[[]T] {
-	panic("TODO: CollectResult")
+	r := make([]T, len(s))
+	for i := 0; i < len(s); i++ {
+		if s[i].IsOk() {
+			r[i] = s[i].Get()
+		} else {
+			return Err[[]T](s[i].GetErr())
+		}
+	}
+	return Ok(r)
 }
