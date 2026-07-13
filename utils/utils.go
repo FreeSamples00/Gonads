@@ -35,54 +35,6 @@ func Try[T any](fn func() T) (result Result[T]) {
 	return Ok(fn())
 }
 
-// ===== Slice =====
-
-// First returns an Option containing the first element.
-//
-// Non-empty: Creates Some(s[0]).
-// Empty:     Creates None.
-func First[T any](s []T) Option[T] {
-	if len(s) > 0 {
-		return Some(s[0])
-	}
-	return None[T]()
-}
-
-// Last returns an Option containing the last element.
-//
-// Non-empty: Creates Some(s[len(s)-1]).
-// Empty:     Creates None.
-func Last[T any](s []T) Option[T] {
-	if len(s) > 0 {
-		return Some(s[len(s)-1])
-	}
-	return None[T]()
-}
-
-// At returns an Option containing the element at index i.
-//
-// In bounds:     Creates Some(s[i]).
-// Out of bounds: Creates None.
-func At[T any](s []T, i int) Option[T] {
-	if len(s) > i {
-		return Some(s[i])
-	}
-	return None[T]()
-}
-
-// Find returns an Option containing the first element matching fn.
-//
-// Match found: Creates Some(s[i]).
-// No match:     Creates None.
-func Find[T any](s []T, fn func(T) bool) Option[T] {
-	for i := 0; i < len(s); i++ {
-		if fn(s[i]) {
-			return Some(s[i])
-		}
-	}
-	return None[T]()
-}
-
 // ===== Collection combinators =====
 
 // CollectOption converts a slice of Options into an Option of slice.
