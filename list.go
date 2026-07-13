@@ -46,17 +46,17 @@ func (l List[T]) Unpack() []T {
 //
 // Returns [][]T where each inner slice has at most n elements.
 func (l List[T]) Chunk(n int) [][]T {
-    if n <= 0 || len(l) == 0 {
-        return [][]T{}
-    }
-    nChunks := (len(l) + n - 1) / n
-    ret := make([][]T, nChunks)
-    for i := 0; i < nChunks; i++ {
-        start := i * n
-        end := min((i+1)*n, len(l))
-        ret[i] = l[start:end]
-    }
-    return ret
+	if n <= 0 || len(l) == 0 {
+		return [][]T{}
+	}
+	nChunks := (len(l) + n - 1) / n
+	ret := make([][]T, nChunks)
+	for i := 0; i < nChunks; i++ {
+		start := i * n
+		end := min((i+1)*n, len(l))
+		ret[i] = l[start:end]
+	}
+	return ret
 }
 
 // ----- Structural -----
@@ -109,13 +109,13 @@ func (l *List[T]) Pop() Option[T] {
 // fn returns true:  Element is included.
 // fn returns false: Element is excluded.
 func (l List[T]) Filter(fn func(T) bool) List[T] {
-    ret := make([]T, 0, len(l))
-    for _, v := range l {
-        if fn(v) {
-            ret = append(ret, v)
-        }
-    }
-    return List[T](ret)
+	ret := make([]T, 0, len(l))
+	for _, v := range l {
+		if fn(v) {
+			ret = append(ret, v)
+		}
+	}
+	return List[T](ret)
 }
 
 // Reverse reverses the List in place.
@@ -131,9 +131,9 @@ func (l List[T]) Reverse() List[T] {
 // Returns a new List with consecutive duplicates collapsed to a single element.
 // Panics on non-comparable T.
 func (l List[T]) Compact() List[T] {
-    return List[T](slices.CompactFunc([]T(l), func(a, b T) bool {
-        return any(a) == any(b)
-    }))
+	return List[T](slices.CompactFunc([]T(l), func(a, b T) bool {
+		return any(a) == any(b)
+	}))
 }
 
 // Unique removes duplicate elements, keeping first occurrence.
@@ -141,16 +141,16 @@ func (l List[T]) Compact() List[T] {
 // Returns a new List with duplicates removed.
 // Panics on non-comparable T.
 func (l List[T]) Unique() List[T] {
-    seen := make(map[any]bool, len(l))
-    ret := make([]T, 0, len(l))
-    for _, v := range l {
-        key := any(v)
-        if !seen[key] {
-            seen[key] = true
-            ret = append(ret, v)
-        }
-    }
-    return List[T](ret)
+	seen := make(map[any]bool, len(l))
+	ret := make([]T, 0, len(l))
+	for _, v := range l {
+		key := any(v)
+		if !seen[key] {
+			seen[key] = true
+			ret = append(ret, v)
+		}
+	}
+	return List[T](ret)
 }
 
 // Map applies fn to each element, returning a new List of the results.
@@ -161,7 +161,7 @@ func (l List[T]) Map[U any](fn func(T) U) List[U] {
 	for _, v := range l {
 		ret = append(ret, fn(v))
 	}
-	return ret
+	return List[U](ret)
 }
 
 // Reduce folds all elements into a single value using fn.
@@ -182,16 +182,16 @@ func (l List[T]) Reduce[U any](fn func(U, T) U, init U) U {
 // less(a, b) returns true if a should come before b.
 // Returns l sorted in place.
 func (l List[T]) Sort(less func(a, b T) bool) List[T] {
-    slices.SortFunc([]T(l), func(a, b T) int {
-        if less(a, b) {
-            return -1
-        }
-        if less(b, a) {
-            return 1
-        }
-        return 0
-    })
-    return l
+	slices.SortFunc([]T(l), func(a, b T) int {
+		if less(a, b) {
+			return -1
+		}
+		if less(b, a) {
+			return 1
+		}
+		return 0
+	})
+	return l
 }
 
 // Max returns the maximum element according to less.
@@ -199,16 +199,16 @@ func (l List[T]) Sort(less func(a, b T) bool) List[T] {
 // Non-empty: Returns Some(max).
 // Empty:     Returns None.
 func (l List[T]) Max(less func(a, b T) bool) Option[T] {
-    if len(l) == 0 {
-        return None[T]()
-    }
-    max := l[0]
-    for _, v := range l[1:] {
-        if less(v, max) {
-            max = v
-        }
-    }
-    return Some(max)
+	if len(l) == 0 {
+		return None[T]()
+	}
+	max := l[0]
+	for _, v := range l[1:] {
+		if less(max, v) {
+			max = v
+		}
+	}
+	return Some(max)
 }
 
 // Min returns the minimum element according to less.
@@ -216,16 +216,16 @@ func (l List[T]) Max(less func(a, b T) bool) Option[T] {
 // Non-empty: Returns Some(min).
 // Empty:     Returns None.
 func (l List[T]) Min(less func(a, b T) bool) Option[T] {
-    if len(l) == 0 {
-        return None[T]()
-    }
-    min := l[0]
-    for _, v := range l[1:] {
-        if less(min, v) {
-            min = v
-        }
-    }
-    return Some(min)
+	if len(l) == 0 {
+		return None[T]()
+	}
+	min := l[0]
+	for _, v := range l[1:] {
+		if less(v, min) {
+			min = v
+		}
+	}
+	return Some(min)
 }
 
 // ----- Equality -----
@@ -244,17 +244,17 @@ func (l List[T]) Index(v T) Option[int] {
 	return None[int]()
 }
 
-// Equals reports whether two Lists are element-wise equal.
+// Equal reports whether two Lists are element-wise equal.
 //
 // Same length and elements: Returns true.
 // Otherwise:                Returns false.
 // Panics on non-comparable T.
-func (l List[T]) Equals(other List[T]) bool {
+func (l List[T]) Equal(other List[T]) bool {
 	if len(other) != len(l) {
 		return false
 	}
-	for i, _ := range l {
-		if any(l[i]) != any (other[i]) {
+	for i, v := range l {
+		if any(v) != any(other[i]) {
 			return false
 		}
 	}
@@ -282,7 +282,7 @@ func (l List[T]) Last() Option[T] {
 	if len(l) == 0 {
 		return None[T]()
 	}
-	return Some(l[len(l) - 1])
+	return Some(l[len(l)-1])
 }
 
 // At returns an Option containing the element at index i.
@@ -290,7 +290,7 @@ func (l List[T]) Last() Option[T] {
 // In bounds:     Creates Some(l[i]).
 // Out of bounds: Creates None.
 func (l List[T]) At(i int) Option[T] {
-	if len(l) - 1 < i || i < 0 {
+	if i < 0 || i >= len(l) {
 		return None[T]()
 	}
 	return Some(l[i])
