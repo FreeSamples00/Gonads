@@ -3,6 +3,8 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/FreeSamples00/gonads.svg)](https://pkg.go.dev/github.com/FreeSamples00/gonads)
 [![Go Version](https://img.shields.io/badge/Go-1.27-00ADD8?logo=go)](https://go.dev/)
 
+> [!INFO] This library uses Go 1.27rc1 for generic methods, which is not a stable release
+
 A minimal library for monadic types and functional list abstractions, leveraging Go 1.27 generics.
 
 Design:
