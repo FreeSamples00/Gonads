@@ -1,4 +1,4 @@
-package gonads
+ackage gonads
 
 import (
 	"slices"
@@ -40,25 +40,6 @@ func (l List[T]) Unpack() []T {
 
 // ===== Methods =====
 
-// ----- Slicing -----
-
-// Chunk splits the List into sub-lists of size n.
-//
-// Returns [][]T where each inner slice has at most n elements.
-func (l List[T]) Chunk(n int) [][]T {
-	if n <= 0 || len(l) == 0 {
-		return [][]T{}
-	}
-	nChunks := (len(l) + n - 1) / n
-	ret := make([][]T, nChunks)
-	for i := 0; i < nChunks; i++ {
-		start := i * n
-		end := min((i+1)*n, len(l))
-		ret[i] = l[start:end]
-	}
-	return ret
-}
-
 // ----- Structural -----
 
 // Clone returns a copy of the List.
@@ -89,19 +70,6 @@ func (l List[T]) Delete(i, j int) List[T] {
 	return List[T](slices.Delete([]T(l), i, j))
 }
 
-// Pop removes and returns the last element.
-//
-// Non-empty: Returns Some(last), mutates l in place.
-// Empty:     Returns None.
-func (l *List[T]) Pop() Option[T] {
-	if len(*l) == 0 {
-		return None[T]()
-	}
-	val := []T(*l)[len(*l)-1]
-	*l = (*l)[:len(*l)-1]
-	return Some(val)
-}
-
 // ----- Transformations -----
 
 // Filter returns a new List containing only elements matching fn.
@@ -124,16 +92,6 @@ func (l List[T]) Filter(fn func(T) bool) List[T] {
 func (l List[T]) Reverse() List[T] {
 	slices.Reverse([]T(l))
 	return l
-}
-
-// Compact removes consecutive duplicate elements.
-//
-// Returns a new List with consecutive duplicates collapsed to a single element.
-// Panics on non-comparable T.
-func (l List[T]) Compact() List[T] {
-	return List[T](slices.CompactFunc([]T(l), func(a, b T) bool {
-		return any(a) == any(b)
-	}))
 }
 
 // Unique removes duplicate elements, keeping first occurrence.
@@ -175,7 +133,7 @@ func (l List[T]) Reduce[U any](fn func(U, T) U, init U) U {
 	return ret
 }
 
-// ----- Ordering -----
+// ----- Comparison -----
 
 // Sort sorts the List using the comparator less.
 //
@@ -226,22 +184,6 @@ func (l List[T]) Min(less func(a, b T) bool) Option[T] {
 		}
 	}
 	return Some(min)
-}
-
-// ----- Equality -----
-
-// Index returns an option of the index of the first occurrence of v.
-//
-// Found:     Returns Some(index).
-// Not found: Returns None.
-// Panics on non-comparable T.
-func (l List[T]) Index(v T) Option[int] {
-	for i, e := range l {
-		if any(e) == any(v) {
-			return Some(i)
-		}
-	}
-	return None[int]()
 }
 
 // Equal reports whether two Lists are element-wise equal.
@@ -307,4 +249,18 @@ func (l List[T]) Find(fn func(T) bool) Option[T] {
 		}
 	}
 	return None[T]()
+}
+
+// Index returns an option of the index of the first occurrence of v.
+//
+// Found:     Returns Some(index).
+// Not found: Returns None.
+// Panics on non-comparable T.
+func (l List[T]) Index(v T) Option[int] {
+	for i, e := range l {
+		if any(e) == any(v) {
+			return Some(i)
+		}
+	}
+	return None[int]()
 }
