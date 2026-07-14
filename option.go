@@ -2,8 +2,8 @@ package gonads
 
 // Option holds either a value or represents a null value.
 type Option[T any] struct {
-	val   T    // Value
-	valid bool // None indicator
+	val  T    // Value
+	some bool // set if Some
 }
 
 // ===== Constructors =====
@@ -15,7 +15,7 @@ type Option[T any] struct {
 // Creates Option[T] with value.
 // Type is inferred from the argument.
 func Some[T any](value T) Option[T] {
-	return Option[T]{val: value, valid: true}
+	return Option[T]{val: value, some: true}
 }
 
 // None creates an Option with no value.
@@ -23,7 +23,7 @@ func Some[T any](value T) Option[T] {
 // Creates Option[T] with no value.
 // Type must be specified.
 func None[T any]() Option[T] {
-	return Option[T]{valid: false}
+	return Option[T]{some: false}
 }
 
 // ===== Methods =====
@@ -36,7 +36,7 @@ func None[T any]() Option[T] {
 // Some: returns true.
 // None: returns false.
 func (o Option[T]) IsSome() bool {
-	return o.valid
+	return o.some
 }
 
 // IsNone reports whether the Option is missing a value.
@@ -45,7 +45,7 @@ func (o Option[T]) IsSome() bool {
 // Some: returns false.
 // None: returns true.
 func (o Option[T]) IsNone() bool {
-	return !o.valid
+	return !o.some
 }
 
 // ----- Accessors -----
@@ -92,7 +92,7 @@ func (o Option[T]) OrElse(fn func() T) T {
 // Some: (val, true).
 // None: (zero, false).
 func (o Option[T]) Unpack() (v T, ok bool) {
-	return o.val, o.valid
+	return o.val, o.some
 }
 
 // PackOption converts a Go (v, ok) return pair into an Option.
@@ -134,12 +134,12 @@ func (o Option[T]) Filter(fn func(T) bool) Option[T] {
 	return None[T]()
 }
 
-// Default replaces none with result of fn.
+// Alt replaces none with result of fn.
 //
 // targets None.
 // Some: propagated forward.
 // None: returns fn().
-func (o Option[T]) Default(fn func() Option[T]) Option[T] {
+func (o Option[T]) Alt(fn func() Option[T]) Option[T] {
 	if o.IsNone() {
 		return fn()
 	}

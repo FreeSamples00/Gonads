@@ -8,7 +8,7 @@ import (
 type Result[T any] struct {
 	val T     // Ok value
 	err error // Err value
-	ok  bool  // state indicator
+	ok  bool  // set if Ok
 }
 
 // ===== Constructors =====
@@ -94,11 +94,11 @@ func (r Result[T]) OrElse(fn func(error) T) T {
 // GetErr returns the contained error.
 //
 // targets Err.
-// Ok: panics with ErrNotErr.
+// Ok: panics with ErrIsOk.
 // Err: returns the contained error.
 func (r Result[T]) GetErr() error {
 	if r.IsOk() {
-		panic(ErrNotErr)
+		panic(ErrIsOk)
 	}
 	return r.err
 }

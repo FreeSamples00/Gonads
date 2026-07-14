@@ -37,4 +37,4 @@ func (e *PanicError) Unwrap() error {
 var ErrNone = errors.New("Option: no value")
 
 // Simple error for Result
-var ErrNotErr = errors.New("Result: no error")
+var ErrIsOk = errors.New("Result: no error")
