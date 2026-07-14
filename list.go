@@ -1,4 +1,4 @@
-ackage gonads
+package gonads
 
 import (
 	"slices"

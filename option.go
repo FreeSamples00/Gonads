@@ -193,15 +193,20 @@ func (o Option[T]) And[O any](other Option[O]) Option[O] {
 	return None[O]()
 }
 
-// ----- Conversions -----
+// ----- Utility -----
 
-// ToResult converts to a Result type.
+// CollectOption converts a slice of Options into an Option of slice.
 //
-// Some: Ok(val).
-// None: Err(ErrNone).
-func (o Option[T]) ToResult() Result[T] {
-	if o.IsNone() {
-		return Err[T](ErrNone)
+// All Some: Creates Some containing all values.
+// Any None: Creates None.
+func CollectOption[T any](s []Option[T]) Option[[]T] {
+	r := make([]T, len(s))
+	for i := 0; i < len(s); i++ {
+		if s[i].IsSome() {
+			r[i] = s[i].Get()
+		} else {
+			return None[[]T]()
+		}
 	}
-	return Ok(o.val)
+	return Some(r)
 }

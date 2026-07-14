@@ -2,6 +2,7 @@ package gonads
 
 import (
 	"fmt"
+	"runtime/debug"
 )
 
 // Result holds either a value of type T or an error.
@@ -218,18 +219,36 @@ func (r Result[T]) MapErr(fn func(error) error) Result[T] {
 	return Err[T](fn(r.err))
 }
 
-// ----- Conversions -----
+// ----- Utility -----
 
-// ToOption converts to an Option type.
+// Try calls fn and wraps the result in a Result.
 //
-// Ok: Some(val).
-// Err: None.
+// fn returns: Creates Ok(val).
+// fn panics:  Creates Err(*PanicError) with the panic value and stack trace.
+func Try[T any](fn func() T) (result Result[T]) {
+	defer func() {
+		if r := recover(); r != nil {
+			result = Err[T](&PanicError{
+				Value: r,
+				Stack: string(debug.Stack()),
+			})
+		}
+	}()
+	return Ok(fn())
+}
+
+// CollectResult converts a slice of Results into a Result of slice.
 //
-// WARNING: the contained error is discarded — Option has no error channel.
-// Use Unpack to preserve the error.
-func (r Result[T]) ToOption() Option[T] {
-	if r.IsErr() {
-		return None[T]()
+// All Ok:  Creates Ok containing all values.
+// Any Err: Creates Err of the first error.
+func CollectResult[T any](s []Result[T]) Result[[]T] {
+	r := make([]T, len(s))
+	for i := 0; i < len(s); i++ {
+		if s[i].IsOk() {
+			r[i] = s[i].Get()
+		} else {
+			return Err[[]T](s[i].GetErr())
+		}
 	}
-	return Some(r.val)
+	return Ok(r)
 }
