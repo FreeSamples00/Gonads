@@ -1,7 +1,6 @@
 package gonads
 
 import (
-	"fmt"
 	"runtime/debug"
 )
 
@@ -30,14 +29,6 @@ func Ok[T any](value T) Result[T] {
 // Type must be specified.
 func Err[T any](err error) Result[T] {
 	return Result[T]{err: err, ok: false}
-}
-
-// Errf creates an error from a format string and wraps it in a Result.
-//
-// Creates Result[T] with formatted error.
-// Type must be specified.
-func Errf[T any](format string, args ...any) Result[T] {
-	return Result[T]{err: fmt.Errorf(format, args...), ok: false}
 }
 
 // ===== Methods =====
@@ -168,18 +159,6 @@ func (r Result[T]) Map[O any](fn func(T) O) Result[O] {
 func (r Result[T]) MapFlat[O any](fn func(T) Result[O]) Result[O] {
 	if r.IsOk() {
 		return fn(r.val)
-	}
-	return Err[O](r.err)
-}
-
-// And replaces the contained value.
-//
-// targets Ok.
-// Ok: returns other.
-// Err: propagated forward.
-func (r Result[T]) And[O any](other Result[O]) Result[O] {
-	if r.IsOk() {
-		return other
 	}
 	return Err[O](r.err)
 }

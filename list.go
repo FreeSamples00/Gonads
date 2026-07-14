@@ -94,23 +94,6 @@ func (l List[T]) Reverse() List[T] {
 	return l
 }
 
-// Unique removes duplicate elements, keeping first occurrence.
-//
-// Returns a new List with duplicates removed.
-// Panics on non-comparable T.
-func (l List[T]) Unique() List[T] {
-	seen := make(map[any]bool, len(l))
-	ret := make([]T, 0, len(l))
-	for _, v := range l {
-		key := any(v)
-		if !seen[key] {
-			seen[key] = true
-			ret = append(ret, v)
-		}
-	}
-	return List[T](ret)
-}
-
 // Map applies fn to each element, returning a new List of the results.
 //
 // Returns List[U] where each element is fn(original).
@@ -186,23 +169,6 @@ func (l List[T]) Min(less func(a, b T) bool) Option[T] {
 	return Some(min)
 }
 
-// Equal reports whether two Lists are element-wise equal.
-//
-// Same length and elements: Returns true.
-// Otherwise:                Returns false.
-// Panics on non-comparable T.
-func (l List[T]) Equal(other List[T]) bool {
-	if len(other) != len(l) {
-		return false
-	}
-	for i, v := range l {
-		if any(v) != any(other[i]) {
-			return false
-		}
-	}
-	return true
-}
-
 // ----- Accessors -----
 
 // First returns an Option containing the first element.
@@ -249,18 +215,4 @@ func (l List[T]) Find(fn func(T) bool) Option[T] {
 		}
 	}
 	return None[T]()
-}
-
-// Index returns an option of the index of the first occurrence of v.
-//
-// Found:     Returns Some(index).
-// Not found: Returns None.
-// Panics on non-comparable T.
-func (l List[T]) Index(v T) Option[int] {
-	for i, e := range l {
-		if any(e) == any(v) {
-			return Some(i)
-		}
-	}
-	return None[int]()
 }

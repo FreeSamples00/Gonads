@@ -181,18 +181,6 @@ func (o Option[T]) Match(somefn func(T), nonefn func()) {
 	}
 }
 
-// And replaces the contained value.
-//
-// targets Some.
-// Some: returns other.
-// None: propagated forward.
-func (o Option[T]) And[O any](other Option[O]) Option[O] {
-	if o.IsSome() {
-		return other
-	}
-	return None[O]()
-}
-
 // ----- Utility -----
 
 // CollectOption converts a slice of Options into an Option of slice.
